@@ -1,0 +1,65 @@
+{
+  "name": "react-native-in-app-devtools",
+  "version": "0.0.1",
+  "private": true,
+  "description": "In-app devtools for React Native. Network inspector with redaction, search, draggable FAB, and Axios/RTK adapters. State logger coming soon.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./axios": "./src/axios/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prepare": "echo 'No build step - shipping TypeScript source'"
+  },
+  "keywords": [
+    "react-native",
+    "in-app-devtools",
+    "react-native-in-app-devtools",
+    "react-native-api-inspector",
+    "react-native-api-logger",
+    "react-native-api-tracker",
+    "devtools",
+    "network-inspector",
+    "api-inspector",
+    "http-debugger",
+    "axios",
+    "rtk-query",
+    "debugger",
+    "redaction",
+    "curl",
+    "ios",
+    "android"
+  ],
+  "author": {
+    "name": "Ihab Khafagaa",
+    "email": "ihabkhafaga3@gmail.com",
+    "url": "https://github.com/khafagaa"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/khafagaa/react-native-in-app-devtools.git"
+  },
+  "homepage": "https://github.com/khafagaa/react-native-in-app-devtools#readme",
+  "bugs": {
+    "url": "https://github.com/khafagaa/react-native-in-app-devtools/issues"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.70.0",
+    "react-native-svg": ">=13.0.0",
+    "axios": ">=1.0.0",
+    "expo-clipboard": ">=6.0.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "react-native-svg": "15.15.4",
+    "typescript": "~5.9.2"
+  }
+}
