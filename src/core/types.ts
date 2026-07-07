@@ -37,3 +37,26 @@ export type ApiLogEntry = {
 };
 
 export const DEFAULT_MAX_ENTRIES = 50;
+
+export type StateLogSource = 'redux' | 'zustand' | 'jotai';
+
+export type StateLogEntry = {
+  id: string;
+  source: StateLogSource;
+  label: string;
+  timestamp: number;
+  before?: unknown;
+  after?: unknown;
+  changedKeys?: string[];
+  /** How many times this label has been written (deduped in place). */
+  count?: number;
+};
+
+export const DEFAULT_MAX_STATE_ENTRIES = 50;
+
+export type StateLoggerConfig = {
+  maxEntries?: number;
+  ignoreAction?: (label: string) => boolean;
+  ignoreAtom?: (label: string) => boolean;
+};
+

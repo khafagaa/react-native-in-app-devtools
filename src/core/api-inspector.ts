@@ -1,6 +1,11 @@
 import type { AxiosInstance } from 'axios';
 import { attachApiInspectorInterceptor } from '../axios/attach';
-import { DEFAULT_MAX_ENTRIES } from './types';
+import { withBaseQuery } from '../rtk/base-query';
+import {
+  DEFAULT_MAX_ENTRIES,
+  DEFAULT_MAX_STATE_ENTRIES,
+  type StateLoggerConfig
+} from './types';
 
 export type ApiInspectorConfig = {
   /** When false, interceptors and UI are no-ops. */
@@ -10,16 +15,21 @@ export type ApiInspectorConfig = {
   onCopied?: (label: string) => void;
   /** FAB background color override. */
   fabColor?: string;
+  /** State logger options (Redux / Zustand / Jotai adapters). */
+  stateLogger?: StateLoggerConfig;
 };
 
 type ResolvedConfig = Required<
   Pick<ApiInspectorConfig, 'enabled' | 'maxEntries'>
 > &
-  Pick<ApiInspectorConfig, 'onCopied' | 'fabColor'>;
+  Pick<ApiInspectorConfig, 'onCopied' | 'fabColor' | 'stateLogger'>;
 
 let resolved: ResolvedConfig = {
   enabled: false,
-  maxEntries: DEFAULT_MAX_ENTRIES
+  maxEntries: DEFAULT_MAX_ENTRIES,
+  stateLogger: {
+    maxEntries: DEFAULT_MAX_STATE_ENTRIES
+  }
 };
 
 function resolveConfig(input: ApiInspectorConfig): ResolvedConfig {
@@ -27,7 +37,11 @@ function resolveConfig(input: ApiInspectorConfig): ResolvedConfig {
     enabled: input.enabled ?? false,
     maxEntries: input.maxEntries ?? DEFAULT_MAX_ENTRIES,
     onCopied: input.onCopied,
-    fabColor: input.fabColor
+    fabColor: input.fabColor,
+    stateLogger: {
+      ...resolved.stateLogger,
+      ...input.stateLogger
+    }
   };
 }
 
@@ -42,6 +56,14 @@ export const ApiInspector = {
 
   getMaxEntries(): number {
     return resolved.maxEntries;
+  },
+
+  getStateMaxEntries(): number {
+    return resolved.stateLogger?.maxEntries ?? DEFAULT_MAX_STATE_ENTRIES;
+  },
+
+  getStateLoggerConfig(): Readonly<StateLoggerConfig> {
+    return resolved.stateLogger ?? { maxEntries: DEFAULT_MAX_STATE_ENTRIES };
   },
 
   getConfig(): Readonly<ResolvedConfig> {
@@ -59,7 +81,9 @@ export const ApiInspector = {
     const resolvedBase = baseURL ?? String(instance.defaults.baseURL ?? '');
     attachApiInspectorInterceptor(instance, resolvedBase);
     return instance;
-  }
+  },
+
+  withBaseQuery: withBaseQuery
 };
 
 /** @deprecated Use `ApiInspector.isEnabled()` */

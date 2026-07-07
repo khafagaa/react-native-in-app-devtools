@@ -40,8 +40,20 @@ export function redactHeaders(
 
 export function truncateBody(value: unknown, maxChars = 12000): unknown {
   if (value == null) return value;
-  const text =
-    typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+
+  let text: string;
+  if (typeof value === 'string') {
+    text = value;
+  } else if (typeof value === 'function') {
+    text = '[Function]';
+  } else {
+    try {
+      text = JSON.stringify(value, null, 2) ?? String(value);
+    } catch {
+      text = String(value);
+    }
+  }
+
   if (text.length <= maxChars) {
     return value;
   }

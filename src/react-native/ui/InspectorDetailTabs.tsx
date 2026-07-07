@@ -5,6 +5,7 @@ import { ApiInspector } from '../../core/api-inspector';
 import type { ApiLogEntry } from '../../core/types';
 import { useInspectorTheme } from './inspector-theme';
 import JsonViewer from './JsonViewer';
+import { stringifyForCopy } from './inspector-copy';
 
 export type DetailTab =
   | 'response'
@@ -31,16 +32,6 @@ type TabPayload = {
   copyLabel: string;
   isEmpty: boolean;
 };
-
-function stringifyForCopy(value: unknown): string {
-  if (value == null) return '';
-  if (typeof value === 'string') return value;
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
 
 function isEmptyValue(value: unknown): boolean {
   if (value == null) return true;

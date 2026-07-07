@@ -8,7 +8,12 @@ let entries: ApiLogEntry[] = [];
 const listeners = new Set<Listener>();
 
 function emit(): void {
+  if (listeners.size === 0) return;
   listeners.forEach(listener => listener());
+}
+
+export function hasApiLogListeners(): boolean {
+  return listeners.size > 0;
 }
 
 export function getApiLogEntries(): readonly ApiLogEntry[] {

@@ -9,7 +9,7 @@ import {
   failApiLogRequest,
   startApiLogRequest,
   updateApiLogRequestFailure
-} from '../core/service';
+} from '../core/http-log';
 
 type InspectorAxiosConfig = InternalAxiosRequestConfig & {
   _apiInspectorId?: string;

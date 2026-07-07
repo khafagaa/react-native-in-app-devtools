@@ -12,6 +12,8 @@ export type InspectorColors = {
     default: string;
     subtle: string;
     muted: string;
+    active: string;
+    inactive: string;
   };
   content: {
     primary: string;
@@ -35,7 +37,9 @@ const LIGHT_COLORS: InspectorColors = {
   background: {
     default: '#FFFFFF',
     subtle: '#F8F6F1',
-    muted: '#F0EDE6'
+    muted: '#F0EDE6',
+    active: '#d3cfc8',
+    inactive: '#F8F6F1'
   },
   content: {
     primary: '#1A1A1A',
@@ -59,7 +63,9 @@ const DARK_COLORS: InspectorColors = {
   background: {
     default: '#1E1E1E',
     subtle: '#2A2A2A',
-    muted: '#333333'
+    muted: '#333333',
+    active: '#404040',
+    inactive: '#2A2A2A'
   },
   content: {
     primary: '#F5F5F5',

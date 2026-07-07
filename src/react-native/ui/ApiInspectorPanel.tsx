@@ -19,13 +19,23 @@ import {
 } from 'react-native';
 import { ApiInspector } from '../../core/api-inspector';
 import { clearApiLogger } from '../../core/service';
+import { clearStateLogger } from '../../core/state-log';
 import { useApiLogEntries } from '../../core/store';
+import { useStateLogEntries } from '../../core/state-store';
 import type { ApiLogEntry } from '../../core/types';
+import type { StateLogEntry } from '../../core/types';
 import ApiRequestDetails from './ApiRequestDetails';
 import { GlobeIcon, MoonIcon, SunIcon } from './icons';
 import { InspectorThemeProvider, useInspectorTheme } from './inspector-theme';
 import { filterApiLogEntries, InspectorSearchField } from './inspector-ui';
 import RequestCard from './RequestCard';
+import {
+  filterStateLogEntries,
+  StateLogCard,
+  StateLogDetails
+} from './StateLogCard';
+
+type InspectorTab = 'network' | 'state';
 
 const FAB_ICON_SIZE = 30;
 const FAB_SIZE = 44;
@@ -239,8 +249,70 @@ type InspectorSheetProps = {
   onClose: () => void;
 };
 
-const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
-  const { colors, isDark, toggleMode } = useInspectorTheme();
+type TabBarProps = {
+  activeTab: InspectorTab;
+  onChange: (tab: InspectorTab) => void;
+};
+
+const TabBar = ({ activeTab, onChange }: TabBarProps) => {
+  const { colors } = useInspectorTheme();
+  console.log('colors', colors);
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        row: {
+          flexDirection: 'row',
+          gap: 8,
+          marginBottom: 10
+        },
+        tab: {
+          flex: 1,
+          paddingVertical: 8,
+          borderRadius: 8,
+          alignItems: 'center',
+          backgroundColor: colors.background.inactive
+        },
+        tabActive: {
+          backgroundColor: colors.background.active,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.stroke.default
+        },
+        tabText: {
+          fontSize: 12,
+          fontWeight: '600',
+          color: colors.content.secondary
+        },
+        tabTextActive: {
+          color: colors.content.primary
+        }
+      }),
+    [colors]
+  );
+
+  return (
+    <View style={styles.row}>
+      {(['network', 'state'] as InspectorTab[]).map(tab => {
+        const active = activeTab === tab;
+        return (
+          <Pressable
+            key={tab}
+            style={[styles.tab, active ? styles.tabActive : null]}
+            onPress={() => onChange(tab)}
+          >
+            <Text
+              style={[styles.tabText, active ? styles.tabTextActive : null]}
+            >
+              {tab === 'network' ? 'Network' : 'State'}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
+const NetworkInspectorContent = () => {
+  const { colors } = useInspectorTheme();
   const entries = useApiLogEntries();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,8 +330,168 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        sheetBody: { flex: 1 },
+        subtitle: {
+          fontSize: 11,
+          color: colors.content.secondary,
+          marginBottom: 10
+        },
+        search: { marginBottom: 10 },
+        empty: {
+          fontSize: 13,
+          color: colors.content.tertiary,
+          textAlign: 'center',
+          paddingVertical: 32,
+          lineHeight: 20
+        },
+        list: { flex: 1 }
+      }),
+    [colors]
+  );
+
+  const handleSelect = useCallback((entry: ApiLogEntry) => {
+    setSelectedId(entry.id);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setSelectedId(null);
+  }, []);
+
+  const subtitle =
+    searchQuery.trim().length > 0
+      ? `${filteredEntries.length} of ${entries.length} requests · sensitive data hidden`
+      : `${entries.length} requests · sensitive data hidden`;
+
+  if (selectedEntry) {
+    return <ApiRequestDetails entry={selectedEntry} onBack={handleBack} />;
+  }
+
+  return (
+    <>
+      <Text style={styles.subtitle}>{subtitle}</Text>
+      <InspectorSearchField
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        containerStyle={styles.search}
+      />
+      <FlatList
+        data={filteredEntries}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <RequestCard entry={item} onPress={handleSelect} />
+        )}
+        style={styles.list}
+        nestedScrollEnabled
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {entries.length === 0
+              ? 'No requests captured yet.\nHTTP traffic from wired clients will appear here.'
+              : 'No requests match your search.\nTry method, URL, or status code.'}
+          </Text>
+        }
+        initialNumToRender={12}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+      />
+    </>
+  );
+};
+
+const StateInspectorContent = () => {
+  const { colors } = useInspectorTheme();
+  const entries = useStateLogEntries();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const selectedEntry = useMemo(
+    () => entries.find(entry => entry.id === selectedId),
+    [entries, selectedId]
+  );
+
+  const filteredEntries = useMemo(
+    () => filterStateLogEntries(entries, searchQuery),
+    [entries, searchQuery]
+  );
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        subtitle: {
+          fontSize: 11,
+          color: colors.content.secondary,
+          marginBottom: 10
+        },
+        search: { marginBottom: 10 },
+        empty: {
+          fontSize: 13,
+          color: colors.content.tertiary,
+          textAlign: 'center',
+          paddingVertical: 32,
+          lineHeight: 20
+        },
+        list: { flex: 1 }
+      }),
+    [colors]
+  );
+
+  const handleSelect = useCallback((entry: StateLogEntry) => {
+    setSelectedId(entry.id);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setSelectedId(null);
+  }, []);
+
+  const subtitle =
+    searchQuery.trim().length > 0
+      ? `${filteredEntries.length} of ${entries.length} changes · sensitive data hidden`
+      : `${entries.length} changes · sensitive data hidden`;
+
+  if (selectedEntry) {
+    return <StateLogDetails entry={selectedEntry} onBack={handleBack} />;
+  }
+
+  return (
+    <>
+      <Text style={styles.subtitle}>{subtitle}</Text>
+      <InspectorSearchField
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search state changes"
+        containerStyle={styles.search}
+      />
+      <FlatList
+        data={filteredEntries}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <StateLogCard entry={item} onPress={handleSelect} />
+        )}
+        style={styles.list}
+        nestedScrollEnabled
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {entries.length === 0
+              ? 'No state changes captured yet.\nWire Redux, Zustand, or Jotai adapters to log here.'
+              : 'No changes match your search.'}
+          </Text>
+        }
+        initialNumToRender={12}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+      />
+    </>
+  );
+};
+
+const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
+  const { colors, isDark, toggleMode } = useInspectorTheme();
+  const [activeTab, setActiveTab] = useState<InspectorTab>('network');
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
         sheet: {
-          height: '82%',
+          height: '88%',
           backgroundColor: colors.background.default,
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
@@ -267,7 +499,8 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
           paddingTop: 8,
           paddingBottom: 16,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.stroke.subtle
+          borderColor: colors.stroke.subtle,
+          gap: 6
         },
         sheetBody: {
           flex: 1
@@ -338,91 +571,54 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
     [colors]
   );
 
-  const handleSelect = useCallback((entry: ApiLogEntry) => {
-    setSelectedId(entry.id);
-  }, []);
-
   const handleClear = useCallback(() => {
-    clearApiLogger();
-    setSelectedId(null);
-    setSearchQuery('');
-  }, []);
+    if (activeTab === 'network') {
+      clearApiLogger();
+    } else {
+      clearStateLogger();
+    }
+  }, [activeTab]);
 
-  const handleBack = useCallback(() => {
-    setSelectedId(null);
-  }, []);
-
-  const subtitle =
-    searchQuery.trim().length > 0
-      ? `${filteredEntries.length} of ${entries.length} requests · sensitive data hidden`
-      : `${entries.length} requests · sensitive data hidden`;
+  const title = activeTab === 'network' ? 'API Inspector' : 'State Inspector';
 
   return (
     <View style={styles.sheet}>
       <View style={styles.handle} />
       <View style={styles.header}>
-        <Text style={styles.title}>API Inspector</Text>
+        <Text style={styles.title}>{title}</Text>
         <View style={styles.headerActions}>
-          {!selectedEntry ? (
-            <>
-              <Pressable
-                onPress={toggleMode}
-                hitSlop={8}
-                style={styles.iconBtn}
-                accessibilityLabel={
-                  isDark
-                    ? 'Switch inspector to light mode'
-                    : 'Switch inspector to dark mode'
-                }
-              >
-                {isDark ? (
-                  <SunIcon size={20} color={colors.content.secondary} />
-                ) : (
-                  <MoonIcon size={20} color={colors.content.secondary} />
-                )}
-              </Pressable>
-              <Pressable onPress={handleClear} hitSlop={8}>
-                <Text style={styles.link}>Clear</Text>
-              </Pressable>
-            </>
-          ) : null}
+          <Pressable
+            onPress={toggleMode}
+            hitSlop={8}
+            style={styles.iconBtn}
+            accessibilityLabel={
+              isDark
+                ? 'Switch inspector to light mode'
+                : 'Switch inspector to dark mode'
+            }
+          >
+            {isDark ? (
+              <SunIcon size={20} color={colors.content.secondary} />
+            ) : (
+              <MoonIcon size={20} color={colors.content.secondary} />
+            )}
+          </Pressable>
+          <Pressable onPress={handleClear} hitSlop={8}>
+            <Text style={styles.link}>Clear</Text>
+          </Pressable>
           <Pressable onPress={onClose} hitSlop={8} style={styles.closeBtn}>
             <Text style={styles.closeText}>Close</Text>
           </Pressable>
         </View>
       </View>
 
+      <TabBar activeTab={activeTab} onChange={setActiveTab} />
+
       <View style={styles.sheetBody}>
-        {selectedEntry ? (
-          <ApiRequestDetails entry={selectedEntry} onBack={handleBack} />
+        {activeTab === 'network' ? (
+          <NetworkInspectorContent />
         ) : (
-          <>
-            <Text style={styles.subtitle}>{subtitle}</Text>
-            <InspectorSearchField
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              containerStyle={styles.search}
-            />
-            <FlatList
-              data={filteredEntries}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <RequestCard entry={item} onPress={handleSelect} />
-              )}
-              style={styles.list}
-              nestedScrollEnabled
-              ListEmptyComponent={
-                <Text style={styles.empty}>
-                  {entries.length === 0
-                    ? 'No requests captured yet.\nHTTP traffic from wired clients will appear here.'
-                    : 'No requests match your search.\nTry method, URL, or status code.'}
-                </Text>
-              }
-              initialNumToRender={12}
-              maxToRenderPerBatch={8}
-              windowSize={5}
-            />
-          </>
+          <StateInspectorContent />
         )}
       </View>
     </View>
@@ -489,7 +685,7 @@ const ApiInspectorPanel = ({
             accessibilityLabel="Dismiss API inspector"
           />
           <InspectorThemeProvider>
-            <InspectorSheet onClose={handleClose} />
+            {open ? <InspectorSheet onClose={handleClose} /> : null}
           </InspectorThemeProvider>
         </View>
       </Modal>

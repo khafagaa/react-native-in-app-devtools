@@ -1,13 +1,17 @@
 {
   "name": "react-native-in-app-devtools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
-  "description": "In-app devtools for React Native. Network inspector with redaction, search, draggable FAB, and Axios/RTK adapters. State logger coming soon.",
+  "description": "In-app devtools for React Native. Network inspector with redaction, RTK Query adapter, and optional Redux/Zustand/Jotai state logger.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./axios": "./src/axios/index.ts"
+    "./axios": "./src/axios/index.ts",
+    "./rtk": "./src/rtk/index.ts",
+    "./redux": "./src/redux/index.ts",
+    "./zustand": "./src/zustand/index.ts",
+    "./jotai": "./src/jotai/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,6 +30,9 @@
     "http-debugger",
     "axios",
     "rtk-query",
+    "redux",
+    "zustand",
+    "jotai",
     "debugger",
     "redaction",
     "curl",
@@ -51,7 +58,28 @@
     "react-native": ">=0.70.0",
     "react-native-svg": ">=13.0.0",
     "axios": ">=1.0.0",
-    "expo-clipboard": ">=6.0.0"
+    "expo-clipboard": ">=6.0.0",
+    "@reduxjs/toolkit": ">=1.9.0",
+    "redux": ">=4.0.0",
+    "zustand": ">=4.0.0",
+    "jotai": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    },
+    "@reduxjs/toolkit": {
+      "optional": true
+    },
+    "redux": {
+      "optional": true
+    },
+    "zustand": {
+      "optional": true
+    },
+    "jotai": {
+      "optional": true
+    }
   },
   "files": [
     "src",
