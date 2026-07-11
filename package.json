@@ -58,6 +58,7 @@
     "react-native": ">=0.70.0",
     "react-native-svg": ">=13.0.0",
     "axios": ">=1.0.0",
+    "@react-native-clipboard/clipboard": ">=1.11.0",
     "expo-clipboard": ">=6.0.0",
     "@reduxjs/toolkit": ">=1.9.0",
     "redux": ">=4.0.0",
@@ -66,6 +67,12 @@
   },
   "peerDependenciesMeta": {
     "axios": {
+      "optional": true
+    },
+    "@react-native-clipboard/clipboard": {
+      "optional": true
+    },
+    "expo-clipboard": {
       "optional": true
     },
     "@reduxjs/toolkit": {
@@ -86,7 +93,11 @@
     "README.md"
   ],
   "devDependencies": {
+    "@react-native-clipboard/clipboard": "^1.16.2",
     "@types/react": "~19.1.0",
+    "axios": "^1.18.1",
+    "react": "19.1.0",
+    "react-native": "0.79.5",
     "react-native-svg": "15.15.4",
     "typescript": "~5.9.2"
   }

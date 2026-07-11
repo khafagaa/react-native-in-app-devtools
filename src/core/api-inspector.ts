@@ -1,6 +1,9 @@
 import type { AxiosInstance } from 'axios';
 import { attachApiInspectorInterceptor } from '../axios/attach';
-import { withBaseQuery } from '../rtk/base-query';
+import {
+  withBaseQuery as instrumentBaseQuery,
+  type WithBaseQueryOptions
+} from '../rtk/base-query';
 import {
   DEFAULT_MAX_ENTRIES,
   DEFAULT_MAX_STATE_ENTRIES,
@@ -83,7 +86,16 @@ export const ApiInspector = {
     return instance;
   },
 
-  withBaseQuery: withBaseQuery
+  /**
+   * Typed as a real method (not a property assignment) so TS keeps the
+   * generic from `instrumentBaseQuery` instead of erasing it.
+   */
+  withBaseQuery<TBaseQuery extends Parameters<typeof instrumentBaseQuery>[0]>(
+    baseQuery: TBaseQuery,
+    options?: WithBaseQueryOptions
+  ): TBaseQuery {
+    return instrumentBaseQuery(baseQuery, options);
+  }
 };
 
 /** @deprecated Use `ApiInspector.isEnabled()` */

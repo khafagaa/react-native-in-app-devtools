@@ -14,8 +14,8 @@ type FetchArgs = {
   headers?: Record<string, unknown>;
 };
 
-type QueryReturnValue<T = unknown> = {
-  data?: T;
+type QueryReturnValue = {
+  data?: unknown;
   error?: {
     status?: number | string;
     data?: unknown;
@@ -24,17 +24,21 @@ type QueryReturnValue<T = unknown> = {
   meta?: unknown;
 };
 
-type BaseQueryFn<
-  Args = unknown,
-  Result = unknown,
-  Error = unknown,
-  DefinitionExtraOptions = Record<string, unknown>,
-  Meta = Record<string, unknown>
-> = (
-  args: Args,
-  api: unknown,
-  extraOptions: DefinitionExtraOptions
-) => Promise<QueryReturnValue<Result>>;
+/** Matches RTK Query: base queries may return a value or a Promise. */
+type MaybePromise<T> = T | PromiseLike<T>;
+
+/**
+ * Loose base-query shape so RTK's real `BaseQueryFn` (with `BaseQueryApi`) is
+ * assignable. Do not type `api` as `unknown` — that breaks under function
+ * parameter contravariance. Return `MaybePromise` (not only `Promise`) so sync
+ * results like `{ error }` match RTK's `fetchBaseQuery`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyBaseQueryFn = (
+  args: any,
+  api: any,
+  extraOptions: any
+) => MaybePromise<QueryReturnValue>;
 
 export type WithBaseQueryOptions = {
   baseUrl?: string;
@@ -108,27 +112,26 @@ function statusFromRtkError(
   return undefined;
 }
 
-export function withBaseQuery<
-  Args = unknown,
-  Result = unknown,
-  TError = unknown,
-  DefinitionExtraOptions = Record<string, unknown>,
-  Meta = Record<string, unknown>
->(
-  baseQuery: BaseQueryFn<
-    Args,
-    Result,
-    TError,
-    DefinitionExtraOptions,
-    Meta
-  >,
+/**
+ * Wraps an RTK Query base query (typically `fetchBaseQuery`) to log requests
+ * in the inspector. Preserves the caller's base-query type exactly.
+ */
+export function withBaseQuery<TBaseQuery extends AnyBaseQueryFn>(
+  baseQuery: TBaseQuery,
   options?: WithBaseQueryOptions
-): BaseQueryFn<Args, Result, TError, DefinitionExtraOptions, Meta> {
-  if (!ApiInspector.isEnabled()) {
-    return baseQuery;
-  }
+): TBaseQuery {
+  // Always return a wrapper and check enabled at *request* time.
+  // Module-load wrapping often runs before ApiInspector.init(), so an
+  // early isEnabled() check would permanently skip logging.
+  const wrapped = (async (
+    args: Parameters<TBaseQuery>[0],
+    api: Parameters<TBaseQuery>[1],
+    extraOptions: Parameters<TBaseQuery>[2]
+  ) => {
+    if (!ApiInspector.isEnabled()) {
+      return baseQuery(args, api, extraOptions);
+    }
 
-  return async (args, api, extraOptions) => {
     const { method, url, queryParams } = buildUrl(
       args as string | FetchArgs,
       options?.baseUrl
@@ -186,5 +189,7 @@ export function withBaseQuery<
       });
       throw error;
     }
-  };
+  }) as unknown as TBaseQuery;
+
+  return wrapped;
 }

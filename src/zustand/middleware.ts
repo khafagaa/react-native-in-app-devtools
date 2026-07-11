@@ -60,13 +60,13 @@ export function withZustandLogger<T extends object>(
       set(partial, replace);
       const next = get();
       const changedKeys = shallowChangedKeys(prev, next);
-      if (changedKeys.length > 0) {
+      for (const key of changedKeys) {
         recordStateChange({
           source: 'zustand',
-          label: options.name,
-          before: pickKeys(prev, changedKeys),
-          after: pickKeys(next, changedKeys),
-          changedKeys
+          label: `${options.name}/${key}`,
+          before: pickKeys(prev, [key]),
+          after: pickKeys(next, [key]),
+          changedKeys: [key]
         });
       }
     };

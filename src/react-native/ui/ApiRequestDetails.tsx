@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { copyToClipboard } from './clipboard';
 import { ApiInspector } from '../../core/api-inspector';
 import { buildCurlFromLogEntry } from '../../core/curl';
 import type { ApiLogEntry } from '../../core/types';
@@ -17,7 +17,7 @@ const ApiRequestDetails = ({ entry, onBack }: ApiRequestDetailsProps) => {
   const { colors } = useInspectorTheme();
 
   const handleCopyCurl = useCallback(async () => {
-    await Clipboard.setStringAsync(buildCurlFromLogEntry(entry));
+    await copyToClipboard(buildCurlFromLogEntry(entry));
     ApiInspector.notifyCopied('cURL');
   }, [entry]);
 

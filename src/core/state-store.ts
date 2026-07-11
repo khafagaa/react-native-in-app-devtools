@@ -34,13 +34,8 @@ export function isStateLoggingActive(): boolean {
 
 export function upsertStateLogEntry(entry: StateLogEntry): void {
   const max = ApiInspector.getStateMaxEntries();
-  const existing = entries.find(item => item.id === entry.id);
-  const merged: StateLogEntry = {
-    ...entry,
-    count: (existing?.count ?? 0) + 1
-  };
   const without = entries.filter(item => item.id !== entry.id);
-  entries = [merged, ...without].slice(0, max);
+  entries = [entry, ...without].slice(0, max);
   emit();
 }
 

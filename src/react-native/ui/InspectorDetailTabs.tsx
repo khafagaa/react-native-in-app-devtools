@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { copyToClipboard } from './clipboard';
 import { ApiInspector } from '../../core/api-inspector';
 import type { ApiLogEntry } from '../../core/types';
 import { useInspectorTheme } from './inspector-theme';
@@ -186,7 +186,7 @@ const InspectorDetailTabs = ({ entry }: InspectorDetailTabsProps) => {
       return;
     }
 
-    await Clipboard.setStringAsync(stringifyForCopy(payload.value));
+    await copyToClipboard(stringifyForCopy(payload.value));
     ApiInspector.notifyCopied(payload.copyLabel);
   }, [payload]);
 

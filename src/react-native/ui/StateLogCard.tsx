@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { copyToClipboard } from './clipboard';
 import { ApiInspector } from '../../core/api-inspector';
+import type { ParentGroup } from '../../core/state-grouping';
 import type { StateLogEntry } from '../../core/types';
 import { isEmptyCopyValue, stringifyForCopy } from './inspector-copy';
 import { useInspectorTheme } from './inspector-theme';
@@ -11,6 +12,8 @@ type StateLogCardProps = {
   entry: StateLogEntry;
   onPress?: (entry: StateLogEntry) => void;
   selected?: boolean;
+  /** When set, shown instead of the full entry.label (e.g. child name in drill-down). */
+  displayLabel?: string;
 };
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -42,7 +45,8 @@ export function filterStateLogEntries(
 export const StateLogCard = ({
   entry,
   onPress,
-  selected
+  selected,
+  displayLabel
 }: StateLogCardProps) => {
   const { colors } = useInspectorTheme();
   const palette = SOURCE_COLORS[entry.source] ?? {
@@ -87,16 +91,6 @@ export const StateLogCard = ({
           fontWeight: '600',
           color: colors.content.primary
         },
-        count: {
-          fontSize: 10,
-          fontWeight: '700',
-          color: palette.text,
-          backgroundColor: palette.bg,
-          paddingHorizontal: 6,
-          paddingVertical: 1,
-          borderRadius: 8,
-          overflow: 'hidden'
-        },
         time: {
           fontSize: 10,
           color: colors.content.tertiary
@@ -117,11 +111,8 @@ export const StateLogCard = ({
           <Text style={styles.badgeText}>{entry.source}</Text>
         </View>
         <Text style={styles.label} numberOfLines={1}>
-          {entry.label}
+          {displayLabel ?? entry.label}
         </Text>
-        {entry.count && entry.count > 1 ? (
-          <Text style={styles.count}>{`×${entry.count}`}</Text>
-        ) : null}
         <Text style={styles.time}>
           {new Date(entry.timestamp).toLocaleTimeString()}
         </Text>
@@ -138,6 +129,98 @@ export const StateLogCard = ({
 
   return (
     <Pressable onPress={() => onPress(entry)} accessibilityRole="button">
+      {content}
+    </Pressable>
+  );
+};
+
+export const StateParentCard = ({
+  group,
+  onPress
+}: {
+  group: ParentGroup;
+  onPress?: (group: ParentGroup) => void;
+}) => {
+  const { colors } = useInspectorTheme();
+  const palette = SOURCE_COLORS[group.source] ?? {
+    bg: colors.background.muted,
+    text: colors.content.secondary
+  };
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        card: {
+          padding: 12,
+          borderRadius: 10,
+          backgroundColor: colors.background.default,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.stroke.subtle,
+          marginBottom: 8
+        },
+        row: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8
+        },
+        badge: {
+          paddingHorizontal: 8,
+          paddingVertical: 2,
+          borderRadius: 6,
+          backgroundColor: palette.bg
+        },
+        badgeText: {
+          fontSize: 10,
+          fontWeight: '700',
+          color: palette.text,
+          textTransform: 'uppercase'
+        },
+        label: {
+          flex: 1,
+          fontSize: 13,
+          fontWeight: '600',
+          color: colors.content.primary
+        },
+        chevron: {
+          fontSize: 14,
+          color: colors.content.tertiary,
+          fontWeight: '600'
+        },
+        subtitle: {
+          marginTop: 6,
+          marginLeft: 2,
+          fontSize: 11,
+          color: colors.content.secondary,
+          fontFamily: monoFont
+        }
+      }),
+    [colors, palette.bg, palette.text]
+  );
+
+  const changeLabel =
+    group.entries.length === 1 ? '1 change' : `${group.entries.length} changes`;
+
+  const content = (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{group.source}</Text>
+        </View>
+        <Text style={styles.label} numberOfLines={1}>
+          {group.parent}
+        </Text>
+        <Text style={styles.chevron}>›</Text>
+      </View>
+      <Text style={styles.subtitle} numberOfLines={1}>
+        {`${changeLabel} · last: ${group.lastChangedChild} · ${new Date(group.latestTimestamp).toLocaleTimeString()}`}
+      </Text>
+    </View>
+  );
+
+  if (!onPress) return content;
+
+  return (
+    <Pressable onPress={() => onPress(group)} accessibilityRole="button">
       {content}
     </Pressable>
   );
@@ -224,7 +307,7 @@ export function StateLogDetails({
       ApiInspector.notifyCopied('Nothing to copy');
       return;
     }
-    await Clipboard.setStringAsync(stringifyForCopy(value));
+    await copyToClipboard(stringifyForCopy(value));
     ApiInspector.notifyCopied(label);
   }, []);
 

@@ -20,6 +20,11 @@ import {
 import { ApiInspector } from '../../core/api-inspector';
 import { clearApiLogger } from '../../core/service';
 import { clearStateLogger } from '../../core/state-log';
+import {
+  filterParentGroups,
+  groupStateEntriesByParent,
+  parseParentLabel
+} from '../../core/state-grouping';
 import { useApiLogEntries } from '../../core/store';
 import { useStateLogEntries } from '../../core/state-store';
 import type { ApiLogEntry } from '../../core/types';
@@ -32,7 +37,8 @@ import RequestCard from './RequestCard';
 import {
   filterStateLogEntries,
   StateLogCard,
-  StateLogDetails
+  StateLogDetails,
+  StateParentCard
 } from './StateLogCard';
 
 type InspectorTab = 'network' | 'state';
@@ -256,7 +262,6 @@ type TabBarProps = {
 
 const TabBar = ({ activeTab, onChange }: TabBarProps) => {
   const { colors } = useInspectorTheme();
-  console.log('colors', colors);
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -397,20 +402,39 @@ const NetworkInspectorContent = () => {
   );
 };
 
+type StateInspectorView = 'parents' | 'children' | 'detail';
+
 const StateInspectorContent = () => {
   const { colors } = useInspectorTheme();
   const entries = useStateLogEntries();
+  const [view, setView] = useState<StateInspectorView>('parents');
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const parentGroups = useMemo(
+    () => groupStateEntriesByParent(entries),
+    [entries]
+  );
+
+  const selectedParent = useMemo(
+    () => parentGroups.find(group => group.id === selectedParentId),
+    [parentGroups, selectedParentId]
+  );
+
+  const filteredParents = useMemo(
+    () => filterParentGroups(parentGroups, searchQuery),
+    [parentGroups, searchQuery]
+  );
+
+  const filteredChildren = useMemo(() => {
+    if (!selectedParent) return [];
+    return filterStateLogEntries(selectedParent.entries, searchQuery);
+  }, [selectedParent, searchQuery]);
 
   const selectedEntry = useMemo(
     () => entries.find(entry => entry.id === selectedId),
     [entries, selectedId]
-  );
-
-  const filteredEntries = useMemo(
-    () => filterStateLogEntries(entries, searchQuery),
-    [entries, searchQuery]
   );
 
   const styles = useMemo(
@@ -422,6 +446,12 @@ const StateInspectorContent = () => {
           marginBottom: 10
         },
         search: { marginBottom: 10 },
+        back: {
+          fontSize: 12,
+          fontWeight: '600',
+          color: colors.content.link,
+          marginBottom: 10
+        },
         empty: {
           fontSize: 13,
           color: colors.content.tertiary,
@@ -434,21 +464,101 @@ const StateInspectorContent = () => {
     [colors]
   );
 
-  const handleSelect = useCallback((entry: StateLogEntry) => {
+  const handleSelectParent = useCallback((group: { id: string }) => {
+    setSelectedParentId(group.id);
+    setView('children');
+    setSearchQuery('');
+  }, []);
+
+  const handleSelectChild = useCallback((entry: StateLogEntry) => {
     setSelectedId(entry.id);
+    setView('detail');
   }, []);
 
-  const handleBack = useCallback(() => {
+  const handleBackFromDetail = useCallback(() => {
     setSelectedId(null);
+    setView('children');
   }, []);
 
-  const subtitle =
-    searchQuery.trim().length > 0
-      ? `${filteredEntries.length} of ${entries.length} changes · sensitive data hidden`
-      : `${entries.length} changes · sensitive data hidden`;
+  const handleBackFromChildren = useCallback(() => {
+    setSelectedParentId(null);
+    setView('parents');
+    setSearchQuery('');
+  }, []);
 
-  if (selectedEntry) {
-    return <StateLogDetails entry={selectedEntry} onBack={handleBack} />;
+  const subtitle = useMemo(() => {
+    const hidden = 'sensitive data hidden';
+    if (view === 'parents') {
+      const total = parentGroups.length;
+      const shown = filteredParents.length;
+      if (searchQuery.trim().length > 0) {
+        return `${shown} of ${total} groups · ${hidden}`;
+      }
+      return `${total} groups · ${entries.length} changes · ${hidden}`;
+    }
+    if (view === 'children' && selectedParent) {
+      const total = selectedParent.entries.length;
+      const shown = filteredChildren.length;
+      if (searchQuery.trim().length > 0) {
+        return `${shown} of ${total} in ${selectedParent.parent} · ${hidden}`;
+      }
+      return `${total} changes in ${selectedParent.parent} · ${hidden}`;
+    }
+    return hidden;
+  }, [
+    view,
+    parentGroups.length,
+    filteredParents.length,
+    searchQuery,
+    entries.length,
+    selectedParent,
+    filteredChildren.length
+  ]);
+
+  if (view === 'detail' && selectedEntry) {
+    return (
+      <StateLogDetails entry={selectedEntry} onBack={handleBackFromDetail} />
+    );
+  }
+
+  if (view === 'children' && selectedParent) {
+    return (
+      <>
+        <Pressable onPress={handleBackFromChildren} hitSlop={8}>
+          <Text style={styles.back}>← {selectedParent.parent}</Text>
+        </Pressable>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+        <InspectorSearchField
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search in this group"
+          containerStyle={styles.search}
+        />
+        <FlatList
+          data={filteredChildren}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <StateLogCard
+              entry={item}
+              displayLabel={parseParentLabel(item.source, item.label).child}
+              onPress={handleSelectChild}
+            />
+          )}
+          style={styles.list}
+          nestedScrollEnabled
+          ListEmptyComponent={
+            <Text style={styles.empty}>
+              {selectedParent.entries.length === 0
+                ? 'No changes in this group yet.'
+                : 'No changes match your search.'}
+            </Text>
+          }
+          initialNumToRender={12}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+        />
+      </>
+    );
   }
 
   return (
@@ -457,14 +567,14 @@ const StateInspectorContent = () => {
       <InspectorSearchField
         value={searchQuery}
         onChangeText={setSearchQuery}
-        placeholder="Search state changes"
+        placeholder="Search groups"
         containerStyle={styles.search}
       />
       <FlatList
-        data={filteredEntries}
+        data={filteredParents}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <StateLogCard entry={item} onPress={handleSelect} />
+          <StateParentCard group={item} onPress={handleSelectParent} />
         )}
         style={styles.list}
         nestedScrollEnabled
@@ -472,7 +582,7 @@ const StateInspectorContent = () => {
           <Text style={styles.empty}>
             {entries.length === 0
               ? 'No state changes captured yet.\nWire Redux, Zustand, or Jotai adapters to log here.'
-              : 'No changes match your search.'}
+              : 'No groups match your search.'}
           </Text>
         }
         initialNumToRender={12}
