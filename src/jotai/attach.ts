@@ -1,5 +1,5 @@
-import { ApiInspector } from '../core/api-inspector';
-import { recordStateChange } from '../core/state-log';
+import { ApiInspector } from "../core/api-inspector";
+import { recordStateChange } from "../core/state-log";
 
 /** Minimal Jotai store surface — compatible with `createStore()` from jotai. */
 export type JotaiStoreLike = {
@@ -17,8 +17,8 @@ export type JotaiLoggerOptions = {
 };
 
 function getAtomLabel(atom: unknown): string | undefined {
-  if (!atom || typeof atom !== 'object') return undefined;
-  if ('debugLabel' in atom && (atom as { debugLabel?: string }).debugLabel) {
+  if (!atom || typeof atom !== "object") return undefined;
+  if ("debugLabel" in atom && (atom as { debugLabel?: string }).debugLabel) {
     return String((atom as { debugLabel?: string }).debugLabel);
   }
   return undefined;
@@ -37,7 +37,7 @@ const attachedStores = new WeakSet<object>();
 
 export function attachJotaiLogger(
   store: JotaiStoreLike,
-  options?: JotaiLoggerOptions
+  options?: JotaiLoggerOptions,
 ): void {
   if (!ApiInspector.isEnabled()) return;
   if (attachedStores.has(store as object)) return;
@@ -45,31 +45,31 @@ export function attachJotaiLogger(
 
   const resolvedOptions: JotaiLoggerOptions = {
     requireDebugLabel: true,
-    ...options
+    ...options,
   };
-  const storeLabel = resolvedOptions.storeName ?? 'jotai';
+  const storeLabel = resolvedOptions.storeName;
 
   const originalSet = store.set.bind(store);
   store.set = (atom: unknown, ...args: unknown[]) => {
     if (shouldLogAtom(atom, resolvedOptions)) {
-      const label = getAtomLabel(atom) ?? 'atom';
+      const label = getAtomLabel(atom) ?? "atom";
       const before = store.get(atom);
       const nextArg = args[0];
       let after: unknown;
-      if (typeof nextArg === 'function') {
+      if (typeof nextArg === "function") {
         try {
           after = (nextArg as (prev: unknown) => unknown)(before);
         } catch {
-          after = '[Updater threw]';
+          after = "[Updater threw]";
         }
       } else {
         after = nextArg;
       }
       recordStateChange({
-        source: 'jotai',
-        label: `${storeLabel}:${label}`,
+        source: "jotai",
+        label: storeLabel ? `${storeLabel}:${label}` : label,
         before,
-        after
+        after,
       });
     }
     return originalSet(atom, ...args);
