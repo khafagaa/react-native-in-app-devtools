@@ -4,8 +4,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode
-} from 'react';
+  type ReactNode,
+} from "react";
 import {
   Animated,
   FlatList,
@@ -15,33 +15,33 @@ import {
   StyleSheet,
   Text,
   useWindowDimensions,
-  View
-} from 'react-native';
-import { ApiInspector } from '../../core/api-inspector';
-import { clearApiLogger } from '../../core/service';
-import { clearStateLogger } from '../../core/state-log';
+  View,
+} from "react-native";
+import { ApiInspector } from "../../core/api-inspector";
+import { clearApiLogger } from "../../core/service";
+import { clearStateLogger } from "../../core/state-log";
 import {
   filterParentGroups,
   groupStateEntriesByParent,
-  parseParentLabel
-} from '../../core/state-grouping';
-import { useApiLogEntries } from '../../core/store';
-import { useStateLogEntries } from '../../core/state-store';
-import type { ApiLogEntry } from '../../core/types';
-import type { StateLogEntry } from '../../core/types';
-import ApiRequestDetails from './ApiRequestDetails';
-import { GlobeIcon, MoonIcon, SunIcon } from './icons';
-import { InspectorThemeProvider, useInspectorTheme } from './inspector-theme';
-import { filterApiLogEntries, InspectorSearchField } from './inspector-ui';
-import RequestCard from './RequestCard';
+  parseParentLabel,
+} from "../../core/state-grouping";
+import { useApiLogEntries } from "../../core/store";
+import { useStateLogEntries } from "../../core/state-store";
+import type { ApiLogEntry } from "../../core/types";
+import type { StateLogEntry } from "../../core/types";
+import ApiRequestDetails from "./ApiRequestDetails";
+import { GlobeIcon, MoonIcon, SunIcon } from "./icons";
+import { InspectorThemeProvider, useInspectorTheme } from "./inspector-theme";
+import { filterApiLogEntries, InspectorSearchField } from "./inspector-ui";
+import RequestCard from "./RequestCard";
 import {
   filterStateLogEntries,
   StateLogCard,
   StateLogDetails,
-  StateParentCard
-} from './StateLogCard';
+  StateParentCard,
+} from "./StateLogCard";
 
-type InspectorTab = 'network' | 'state';
+type InspectorTab = "network" | "state";
 
 const FAB_ICON_SIZE = 30;
 const FAB_SIZE = 44;
@@ -71,17 +71,17 @@ type DraggableFabProps = {
 const DraggableFab = ({
   backgroundColor,
   icon,
-  onPress
+  onPress,
 }: DraggableFabProps) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const initialPosition = useMemo(
     () => ({
       x: screenWidth - FAB_SIZE - EDGE_MARGIN,
-      y: screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN - 28
+      y: screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN - 28,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const pan = useRef(new Animated.ValueXY(initialPosition)).current;
@@ -107,7 +107,7 @@ const DraggableFab = ({
         // and JS-driven animated values, and `pan` is JS-driven because
         // its position is updated via direct `setValue` calls while
         // dragging.
-        useNativeDriver: false
+        useNativeDriver: false,
       }).start();
     }, IDLE_FADE_DELAY_MS);
   }, [clearIdleTimer, opacity]);
@@ -117,7 +117,7 @@ const DraggableFab = ({
     Animated.timing(opacity, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: false
+      useNativeDriver: false,
     }).start();
   }, [clearIdleTimer, opacity]);
 
@@ -137,12 +137,12 @@ const DraggableFab = ({
     const clampedX = clamp(
       positionRef.current.x,
       EDGE_MARGIN,
-      screenWidth - FAB_SIZE - EDGE_MARGIN
+      screenWidth - FAB_SIZE - EDGE_MARGIN,
     );
     const clampedY = clamp(
       positionRef.current.y,
       TOP_SAFE_MARGIN,
-      screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN
+      screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN,
     );
     if (
       clampedX !== positionRef.current.x ||
@@ -189,45 +189,48 @@ const DraggableFab = ({
         const clampedY = clamp(
           endY,
           TOP_SAFE_MARGIN,
-          screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN
+          screenHeight - FAB_SIZE - BOTTOM_SAFE_MARGIN,
         );
 
         Animated.spring(pan, {
           toValue: { x: snapX, y: clampedY },
           useNativeDriver: false,
-          friction: 8
+          friction: 8,
         }).start(() => scheduleIdleFade());
-      }
-    })
+      },
+    }),
   ).current;
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
         fabContainer: {
-          position: 'absolute',
+          // Keep physical left/translateX coords under app-wide RTL
+          // (I18nManager.forceRTL + swapLeftAndRightInRTL).
+          direction: "ltr",
+          position: "absolute",
           top: 0,
           left: 0,
           width: FAB_SIZE,
           height: FAB_SIZE,
-          zIndex: 1000
+          zIndex: 1000,
         },
         fab: {
           borderRadius: 50,
-          alignItems: 'center',
-          justifyContent: 'center',
-          alignSelf: 'center',
-          shadowColor: '#000',
+          alignItems: "center",
+          justifyContent: "center",
+          alignSelf: "center",
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
           shadowRadius: 4,
           elevation: 4,
           backgroundColor,
           width: 42,
-          height: 42
-        }
+          height: 42,
+        },
       }),
-    [backgroundColor]
+    [backgroundColor],
   );
 
   return (
@@ -235,7 +238,7 @@ const DraggableFab = ({
       {...panResponder.panHandlers}
       style={[
         styles.fabContainer,
-        { transform: pan.getTranslateTransform(), opacity }
+        { transform: pan.getTranslateTransform(), opacity },
       ]}
       accessibilityLabel="Open API inspector (dev). Draggable."
       accessibilityRole="button"
@@ -266,37 +269,37 @@ const TabBar = ({ activeTab, onChange }: TabBarProps) => {
     () =>
       StyleSheet.create({
         row: {
-          flexDirection: 'row',
+          flexDirection: "row",
           gap: 8,
-          marginBottom: 10
+          marginBottom: 10,
         },
         tab: {
           flex: 1,
           paddingVertical: 8,
           borderRadius: 8,
-          alignItems: 'center',
-          backgroundColor: colors.background.inactive
+          alignItems: "center",
+          backgroundColor: colors.background.inactive,
         },
         tabActive: {
           backgroundColor: colors.background.active,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.stroke.default
+          borderColor: colors.stroke.default,
         },
         tabText: {
           fontSize: 12,
-          fontWeight: '600',
-          color: colors.content.secondary
+          fontWeight: "600",
+          color: colors.content.secondary,
         },
         tabTextActive: {
-          color: colors.content.primary
-        }
+          color: colors.content.primary,
+        },
       }),
-    [colors]
+    [colors],
   );
 
   return (
     <View style={styles.row}>
-      {(['network', 'state'] as InspectorTab[]).map(tab => {
+      {(["network", "state"] as InspectorTab[]).map(tab => {
         const active = activeTab === tab;
         return (
           <Pressable
@@ -307,7 +310,7 @@ const TabBar = ({ activeTab, onChange }: TabBarProps) => {
             <Text
               style={[styles.tabText, active ? styles.tabTextActive : null]}
             >
-              {tab === 'network' ? 'Network' : 'State'}
+              {tab === "network" ? "Network" : "State"}
             </Text>
           </Pressable>
         );
@@ -320,16 +323,16 @@ const NetworkInspectorContent = () => {
   const { colors } = useInspectorTheme();
   const entries = useApiLogEntries();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const selectedEntry = useMemo(
     () => entries.find(entry => entry.id === selectedId),
-    [entries, selectedId]
+    [entries, selectedId],
   );
 
   const filteredEntries = useMemo(
     () => filterApiLogEntries(entries, searchQuery),
-    [entries, searchQuery]
+    [entries, searchQuery],
   );
 
   const styles = useMemo(
@@ -339,19 +342,19 @@ const NetworkInspectorContent = () => {
         subtitle: {
           fontSize: 11,
           color: colors.content.secondary,
-          marginBottom: 10
+          marginBottom: 10,
         },
         search: { marginBottom: 10 },
         empty: {
           fontSize: 13,
           color: colors.content.tertiary,
-          textAlign: 'center',
+          textAlign: "center",
           paddingVertical: 32,
-          lineHeight: 20
+          lineHeight: 20,
         },
-        list: { flex: 1 }
+        list: { flex: 1 },
       }),
-    [colors]
+    [colors],
   );
 
   const handleSelect = useCallback((entry: ApiLogEntry) => {
@@ -390,8 +393,8 @@ const NetworkInspectorContent = () => {
         ListEmptyComponent={
           <Text style={styles.empty}>
             {entries.length === 0
-              ? 'No requests captured yet.\nHTTP traffic from wired clients will appear here.'
-              : 'No requests match your search.\nTry method, URL, or status code.'}
+              ? "No requests captured yet.\nHTTP traffic from wired clients will appear here."
+              : "No requests match your search.\nTry method, URL, or status code."}
           </Text>
         }
         initialNumToRender={12}
@@ -402,29 +405,29 @@ const NetworkInspectorContent = () => {
   );
 };
 
-type StateInspectorView = 'parents' | 'children' | 'detail';
+type StateInspectorView = "parents" | "children" | "detail";
 
 const StateInspectorContent = () => {
   const { colors } = useInspectorTheme();
   const entries = useStateLogEntries();
-  const [view, setView] = useState<StateInspectorView>('parents');
+  const [view, setView] = useState<StateInspectorView>("parents");
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const parentGroups = useMemo(
     () => groupStateEntriesByParent(entries),
-    [entries]
+    [entries],
   );
 
   const selectedParent = useMemo(
     () => parentGroups.find(group => group.id === selectedParentId),
-    [parentGroups, selectedParentId]
+    [parentGroups, selectedParentId],
   );
 
   const filteredParents = useMemo(
     () => filterParentGroups(parentGroups, searchQuery),
-    [parentGroups, searchQuery]
+    [parentGroups, searchQuery],
   );
 
   const filteredChildren = useMemo(() => {
@@ -434,7 +437,7 @@ const StateInspectorContent = () => {
 
   const selectedEntry = useMemo(
     () => entries.find(entry => entry.id === selectedId),
-    [entries, selectedId]
+    [entries, selectedId],
   );
 
   const styles = useMemo(
@@ -443,52 +446,52 @@ const StateInspectorContent = () => {
         subtitle: {
           fontSize: 11,
           color: colors.content.secondary,
-          marginBottom: 10
+          marginBottom: 10,
         },
         search: { marginBottom: 10 },
         back: {
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: "600",
           color: colors.content.link,
-          marginBottom: 10
+          marginBottom: 10,
         },
         empty: {
           fontSize: 13,
           color: colors.content.tertiary,
-          textAlign: 'center',
+          textAlign: "center",
           paddingVertical: 32,
-          lineHeight: 20
+          lineHeight: 20,
         },
-        list: { flex: 1 }
+        list: { flex: 1 },
       }),
-    [colors]
+    [colors],
   );
 
   const handleSelectParent = useCallback((group: { id: string }) => {
     setSelectedParentId(group.id);
-    setView('children');
-    setSearchQuery('');
+    setView("children");
+    setSearchQuery("");
   }, []);
 
   const handleSelectChild = useCallback((entry: StateLogEntry) => {
     setSelectedId(entry.id);
-    setView('detail');
+    setView("detail");
   }, []);
 
   const handleBackFromDetail = useCallback(() => {
     setSelectedId(null);
-    setView('children');
+    setView("children");
   }, []);
 
   const handleBackFromChildren = useCallback(() => {
     setSelectedParentId(null);
-    setView('parents');
-    setSearchQuery('');
+    setView("parents");
+    setSearchQuery("");
   }, []);
 
   const subtitle = useMemo(() => {
-    const hidden = 'sensitive data hidden';
-    if (view === 'parents') {
+    const hidden = "sensitive data hidden";
+    if (view === "parents") {
       const total = parentGroups.length;
       const shown = filteredParents.length;
       if (searchQuery.trim().length > 0) {
@@ -496,7 +499,7 @@ const StateInspectorContent = () => {
       }
       return `${total} groups · ${entries.length} changes · ${hidden}`;
     }
-    if (view === 'children' && selectedParent) {
+    if (view === "children" && selectedParent) {
       const total = selectedParent.entries.length;
       const shown = filteredChildren.length;
       if (searchQuery.trim().length > 0) {
@@ -512,16 +515,16 @@ const StateInspectorContent = () => {
     searchQuery,
     entries.length,
     selectedParent,
-    filteredChildren.length
+    filteredChildren.length,
   ]);
 
-  if (view === 'detail' && selectedEntry) {
+  if (view === "detail" && selectedEntry) {
     return (
       <StateLogDetails entry={selectedEntry} onBack={handleBackFromDetail} />
     );
   }
 
-  if (view === 'children' && selectedParent) {
+  if (view === "children" && selectedParent) {
     return (
       <>
         <Pressable onPress={handleBackFromChildren} hitSlop={8}>
@@ -549,8 +552,8 @@ const StateInspectorContent = () => {
           ListEmptyComponent={
             <Text style={styles.empty}>
               {selectedParent.entries.length === 0
-                ? 'No changes in this group yet.'
-                : 'No changes match your search.'}
+                ? "No changes in this group yet."
+                : "No changes match your search."}
             </Text>
           }
           initialNumToRender={12}
@@ -581,8 +584,8 @@ const StateInspectorContent = () => {
         ListEmptyComponent={
           <Text style={styles.empty}>
             {entries.length === 0
-              ? 'No state changes captured yet.\nWire Redux, Zustand, or Jotai adapters to log here.'
-              : 'No groups match your search.'}
+              ? "No state changes captured yet.\nWire Redux, Zustand, or Jotai adapters to log here."
+              : "No groups match your search."}
           </Text>
         }
         initialNumToRender={12}
@@ -595,13 +598,13 @@ const StateInspectorContent = () => {
 
 const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
   const { colors, isDark, toggleMode } = useInspectorTheme();
-  const [activeTab, setActiveTab] = useState<InspectorTab>('network');
+  const [activeTab, setActiveTab] = useState<InspectorTab>("network");
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
         sheet: {
-          height: '88%',
+          height: "88%",
           backgroundColor: colors.background.default,
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
@@ -610,86 +613,86 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
           paddingBottom: 16,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: colors.stroke.subtle,
-          gap: 6
+          gap: 6,
         },
         sheetBody: {
-          flex: 1
+          flex: 1,
         },
         handle: {
-          alignSelf: 'center',
+          alignSelf: "center",
           width: 36,
           height: 4,
           borderRadius: 2,
           backgroundColor: colors.stroke.default,
-          marginBottom: 12
+          marginBottom: 12,
         },
         header: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 4
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 4,
         },
         title: {
           fontSize: 16,
-          fontWeight: '700',
+          fontWeight: "700",
           color: colors.content.primary,
-          flex: 1
+          flex: 1,
         },
         headerActions: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 10
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
         },
         iconBtn: {
           // padding: 4
         },
         link: {
           fontSize: 12,
-          fontWeight: '600',
-          color: colors.content.link
+          fontWeight: "600",
+          color: colors.content.link,
         },
         closeBtn: {
           paddingHorizontal: 10,
           paddingVertical: 4,
           borderRadius: 6,
-          backgroundColor: colors.background.muted
+          backgroundColor: colors.background.muted,
         },
         closeText: {
           fontSize: 12,
-          fontWeight: '600',
-          color: colors.content.primary
+          fontWeight: "600",
+          color: colors.content.primary,
         },
         subtitle: {
           fontSize: 11,
           color: colors.content.secondary,
-          marginBottom: 10
+          marginBottom: 10,
         },
         search: {
-          marginBottom: 10
+          marginBottom: 10,
         },
         empty: {
           fontSize: 13,
           color: colors.content.tertiary,
-          textAlign: 'center',
+          textAlign: "center",
           paddingVertical: 32,
-          lineHeight: 20
+          lineHeight: 20,
         },
         list: {
-          flex: 1
-        }
+          flex: 1,
+        },
       }),
-    [colors]
+    [colors],
   );
 
   const handleClear = useCallback(() => {
-    if (activeTab === 'network') {
+    if (activeTab === "network") {
       clearApiLogger();
     } else {
       clearStateLogger();
     }
   }, [activeTab]);
 
-  const title = activeTab === 'network' ? 'API Inspector' : 'State Inspector';
+  const title = activeTab === "network" ? "API Inspector" : "State Inspector";
 
   return (
     <View style={styles.sheet}>
@@ -703,8 +706,8 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
             style={styles.iconBtn}
             accessibilityLabel={
               isDark
-                ? 'Switch inspector to light mode'
-                : 'Switch inspector to dark mode'
+                ? "Switch inspector to light mode"
+                : "Switch inspector to dark mode"
             }
           >
             {isDark ? (
@@ -725,7 +728,7 @@ const InspectorSheet = ({ onClose }: InspectorSheetProps) => {
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
       <View style={styles.sheetBody}>
-        {activeTab === 'network' ? (
+        {activeTab === "network" ? (
           <NetworkInspectorContent />
         ) : (
           <StateInspectorContent />
@@ -744,22 +747,27 @@ export type ApiInspectorPanelProps = {
 
 const ApiInspectorPanel = ({
   fabColor: fabColorProp,
-  fabIcon
+  fabIcon,
 }: ApiInspectorPanelProps = {}) => {
   const [open, setOpen] = useState(false);
   const resolvedFabColor =
-    fabColorProp ?? ApiInspector.getConfig().fabColor ?? '#B8860B';
+    fabColorProp ?? ApiInspector.getConfig().fabColor ?? "#B8860B";
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        host: {
+          ...StyleSheet.absoluteFillObject,
+          direction: "ltr",
+          zIndex: 1000,
+        },
         modalRoot: {
           flex: 1,
-          justifyContent: 'flex-end',
-          backgroundColor: 'rgba(0,0,0,0.35)'
-        }
+          justifyContent: "flex-end",
+          backgroundColor: "rgba(0,0,0,0.35)",
+        },
       }),
-    []
+    [],
   );
 
   const handleOpen = useCallback(() => {
@@ -775,7 +783,7 @@ const ApiInspectorPanel = ({
   }
 
   return (
-    <>
+    <View pointerEvents="box-none" style={styles.host}>
       <DraggableFab
         backgroundColor={resolvedFabColor}
         icon={fabIcon}
@@ -799,7 +807,7 @@ const ApiInspectorPanel = ({
           </InspectorThemeProvider>
         </View>
       </Modal>
-    </>
+    </View>
   );
 };
 
