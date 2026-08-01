@@ -1,7 +1,6 @@
 {
   "name": "react-native-in-app-devtools",
-  "version": "0.0.3",
-  "private": true,
+  "version": "0.0.4",
   "description": "In-app devtools for React Native. Network inspector with redaction, RTK Query adapter, and optional Redux/Zustand/Jotai state logger.",
   "main": "src/index.ts",
   "types": "src/index.ts",
