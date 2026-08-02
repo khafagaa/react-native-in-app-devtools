@@ -70,6 +70,9 @@ import { ApiInspector } from 'react-native-in-app-devtools';
 ApiInspector.init({
   enabled: __DEV__,
   maxEntries: 50,
+  // Optional: tune redaction (on by default)
+  // redaction: { enabled: false },
+  // redaction: { ignoreKeys: ['eid', 'emiratesId'] },
   stateLogger: { maxEntries: 50 }
 });
 ```
@@ -253,6 +256,7 @@ attachJotaiLogger(jotaiStore, {
 | ------------- | ------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `enabled`     | `boolean`                 | `false`   | When false, interceptors, state loggers, and UI are no-ops                                                              |
 | `maxEntries`  | `number`                  | `50`      | Max in-memory **network** log entries                                                                                   |
+| `redaction`   | `RedactionConfig`         | —         | Redaction options: `{ enabled?: boolean, ignoreKeys?: string[] }`. Default `enabled: true`. `ignoreKeys` are case-insensitive exact key names that are never redacted. |
 | `stateLogger` | `StateLoggerConfig`       | —         | State logger options: `{ maxEntries?, ignoreAction?, ignoreAtom? }`                                                     |
 | `onCopied`    | `(label: string) => void` | —         | Optional callback after copy actions. Not a built-in toast — wire your own UI (e.g. `Toast.show`) if you want feedback. |
 | `fabColor`    | `string`                  | `#B8860B` | FAB background color override                                                                                           |
