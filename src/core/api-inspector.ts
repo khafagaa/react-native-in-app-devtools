@@ -4,9 +4,11 @@ import {
   withBaseQuery as instrumentBaseQuery,
   type WithBaseQueryOptions
 } from '../rtk/base-query';
+import { configureRedaction } from './redaction';
 import {
   DEFAULT_MAX_ENTRIES,
   DEFAULT_MAX_STATE_ENTRIES,
+  type RedactionConfig,
   type StateLoggerConfig
 } from './types';
 
@@ -18,6 +20,8 @@ export type ApiInspectorConfig = {
   onCopied?: (label: string) => void;
   /** FAB background color override. */
   fabColor?: string;
+  /** Redaction options for network + state payloads. */
+  redaction?: RedactionConfig;
   /** State logger options (Redux / Zustand / Jotai adapters). */
   stateLogger?: StateLoggerConfig;
 };
@@ -25,11 +29,19 @@ export type ApiInspectorConfig = {
 type ResolvedConfig = Required<
   Pick<ApiInspectorConfig, 'enabled' | 'maxEntries'>
 > &
-  Pick<ApiInspectorConfig, 'onCopied' | 'fabColor' | 'stateLogger'>;
+  Pick<ApiInspectorConfig, 'onCopied' | 'fabColor' | 'stateLogger'> & {
+    redaction: RedactionConfig;
+  };
+
+const DEFAULT_REDACTION: RedactionConfig = {
+  enabled: true,
+  ignoreKeys: []
+};
 
 let resolved: ResolvedConfig = {
   enabled: false,
   maxEntries: DEFAULT_MAX_ENTRIES,
+  redaction: { ...DEFAULT_REDACTION },
   stateLogger: {
     maxEntries: DEFAULT_MAX_STATE_ENTRIES
   }
@@ -41,6 +53,15 @@ function resolveConfig(input: ApiInspectorConfig): ResolvedConfig {
     maxEntries: input.maxEntries ?? DEFAULT_MAX_ENTRIES,
     onCopied: input.onCopied,
     fabColor: input.fabColor,
+    redaction: {
+      ...DEFAULT_REDACTION,
+      ...resolved.redaction,
+      ...input.redaction,
+      ignoreKeys:
+        input.redaction?.ignoreKeys ??
+        resolved.redaction.ignoreKeys ??
+        DEFAULT_REDACTION.ignoreKeys
+    },
     stateLogger: {
       ...resolved.stateLogger,
       ...input.stateLogger
@@ -51,6 +72,7 @@ function resolveConfig(input: ApiInspectorConfig): ResolvedConfig {
 export const ApiInspector = {
   init(config: ApiInspectorConfig): void {
     resolved = resolveConfig({ ...resolved, ...config });
+    configureRedaction(resolved.redaction);
   },
 
   isEnabled(): boolean {
@@ -67,6 +89,10 @@ export const ApiInspector = {
 
   getStateLoggerConfig(): Readonly<StateLoggerConfig> {
     return resolved.stateLogger ?? { maxEntries: DEFAULT_MAX_STATE_ENTRIES };
+  },
+
+  getRedactionConfig(): Readonly<RedactionConfig> {
+    return resolved.redaction;
   },
 
   getConfig(): Readonly<ResolvedConfig> {

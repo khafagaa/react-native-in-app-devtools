@@ -1,9 +1,43 @@
+import type { RedactionConfig } from './types';
+
 const SENSITIVE_KEY_PATTERN =
   /authorization|cookie|x-api-key|token|accessToken|refreshToken|clientSecret|password|secret|eid|emiratesId/i;
 
 const REDACTED = '***REDACTED***';
 
+type ResolvedRedaction = {
+  enabled: boolean;
+  ignoreKeySet: Set<string>;
+};
+
+let resolved: ResolvedRedaction = {
+  enabled: true,
+  ignoreKeySet: new Set()
+};
+
+export function configureRedaction(config?: RedactionConfig): void {
+  resolved = {
+    enabled: config?.enabled ?? true,
+    ignoreKeySet: new Set(
+      (config?.ignoreKeys ?? []).map(key => key.toLowerCase())
+    )
+  };
+}
+
+export function getRedactionConfig(): Readonly<{
+  enabled: boolean;
+  ignoreKeys: string[];
+}> {
+  return {
+    enabled: resolved.enabled,
+    ignoreKeys: [...resolved.ignoreKeySet]
+  };
+}
+
 function shouldRedactKey(key: string): boolean {
+  if (resolved.ignoreKeySet.has(key.toLowerCase())) {
+    return false;
+  }
   return SENSITIVE_KEY_PATTERN.test(key);
 }
 
@@ -15,6 +49,7 @@ function redactValue(value: unknown): unknown {
 }
 
 export function redactUnknown(value: unknown, depth = 0): unknown {
+  if (!resolved.enabled) return value;
   if (depth > 8) return '[Truncated]';
   if (value == null) return value;
   if (Array.isArray(value)) {
@@ -35,6 +70,7 @@ export function redactHeaders(
   headers?: Record<string, unknown>
 ): Record<string, unknown> | undefined {
   if (!headers) return undefined;
+  if (!resolved.enabled) return headers;
   return redactUnknown(headers) as Record<string, unknown>;
 }
 

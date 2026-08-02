@@ -1,4 +1,4 @@
-export type ApiLogStatus = 'pending' | 'success' | 'failed';
+export type ApiLogStatus = "pending" | "success" | "failed";
 
 export type ApiLogRequest = {
   method: string;
@@ -38,7 +38,7 @@ export type ApiLogEntry = {
 
 export const DEFAULT_MAX_ENTRIES = 50;
 
-export type StateLogSource = 'redux' | 'zustand' | 'jotai';
+export type StateLogSource = "redux" | "zustand" | "jotai";
 
 export type StateLogEntry = {
   id: string;
@@ -60,3 +60,8 @@ export type StateLoggerConfig = {
   ignoreAtom?: (label: string) => boolean;
 };
 
+export type RedactionConfig = {
+  /** When false, sensitive values are left as-is. Default true. */
+  enabled?: boolean;
+  ignoreKeys?: string[];
+};
