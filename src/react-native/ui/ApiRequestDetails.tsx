@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { copyToClipboard } from './clipboard';
 import { ApiInspector } from '../../core/api-inspector';
+import { buildCopyAllFromLogEntry } from './inspector-copy';
 import { buildCurlFromLogEntry } from '../../core/curl';
 import type { ApiLogEntry } from '../../core/types';
 import InspectorDetailTabs from './InspectorDetailTabs';
@@ -19,6 +20,11 @@ const ApiRequestDetails = ({ entry, onBack }: ApiRequestDetailsProps) => {
   const handleCopyCurl = useCallback(async () => {
     await copyToClipboard(buildCurlFromLogEntry(entry));
     ApiInspector.notifyCopied('cURL');
+  }, [entry]);
+
+  const handleCopyAll = useCallback(async () => {
+    await copyToClipboard(buildCopyAllFromLogEntry(entry));
+    ApiInspector.notifyCopied('cURL + body + response');
   }, [entry]);
 
   const styles = useMemo(
@@ -68,6 +74,23 @@ const ApiRequestDetails = ({ entry, onBack }: ApiRequestDetailsProps) => {
           fontSize: 11,
           fontWeight: '700',
           color: colors.content.inverse
+        },
+        actionsRow: {
+          flexDirection: 'row',
+          gap: 8,
+          marginBottom: 10
+        },
+        copyAllBtn: {
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 6,
+          borderWidth: 1,
+          borderColor: colors.brand[600]
+        },
+        copyAllText: {
+          fontSize: 11,
+          fontWeight: '700',
+          color: colors.brand[600]
         }
       }),
     [colors]
@@ -95,6 +118,15 @@ const ApiRequestDetails = ({ entry, onBack }: ApiRequestDetailsProps) => {
           hitSlop={4}
         >
           <Text style={styles.copyCurlText}>Copy cURL</Text>
+        </Pressable>
+      </View>
+      <View style={styles.actionsRow}>
+        <Pressable
+          style={styles.copyAllBtn}
+          onPress={() => void handleCopyAll()}
+          hitSlop={4}
+        >
+          <Text style={styles.copyAllText}>Copy C + B + R</Text>
         </Pressable>
       </View>
       <InspectorDetailTabs entry={entry} />

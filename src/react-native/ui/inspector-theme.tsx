@@ -31,6 +31,11 @@ export type InspectorColors = {
   brand: {
     600: string;
   };
+  danger: {
+    text: string;
+    subtle: string;
+    stroke: string;
+  };
 };
 
 const LIGHT_COLORS: InspectorColors = {
@@ -56,6 +61,11 @@ const LIGHT_COLORS: InspectorColors = {
   },
   brand: {
     600: '#B8860B'
+  },
+  danger: {
+    text: '#C62828',
+    subtle: '#FDECEA',
+    stroke: '#F5B5AE'
   }
 };
 
@@ -82,6 +92,11 @@ const DARK_COLORS: InspectorColors = {
   },
   brand: {
     600: '#D4AF37'
+  },
+  danger: {
+    text: '#EF5350',
+    subtle: '#3A2222',
+    stroke: '#7A3B37'
   }
 };
 

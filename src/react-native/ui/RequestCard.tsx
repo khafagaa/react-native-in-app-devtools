@@ -1,14 +1,14 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { ApiLogEntry } from '../../core/types';
-import { useInspectorTheme } from './inspector-theme';
+import { useMemo } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import type { ApiLogEntry } from "../../core/types";
+import { useInspectorTheme } from "./inspector-theme";
 import {
   formatRequestTime,
   MethodBadge,
   parseRequestUrl,
   StatusPill,
-  useInspectorStyles
-} from './inspector-ui';
+  useInspectorStyles,
+} from "./inspector-ui";
 
 type RequestCardProps = {
   entry: ApiLogEntry;
@@ -18,7 +18,12 @@ type RequestCardProps = {
   onRemove?: (entry: ApiLogEntry) => void;
 };
 
-const RequestCard = ({ entry, selected, onPress, onRemove }: RequestCardProps) => {
+const RequestCard = ({
+  entry,
+  selected,
+  onPress,
+  onRemove,
+}: RequestCardProps) => {
   const { colors } = useInspectorTheme();
   const inspectorText = useInspectorStyles(colors);
   const { host, path } = useMemo(() => parseRequestUrl(entry.url), [entry.url]);
@@ -33,30 +38,40 @@ const RequestCard = ({ entry, selected, onPress, onRemove }: RequestCardProps) =
           borderRadius: 10,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: colors.stroke.subtle,
-          backgroundColor: colors.background.default
+          backgroundColor: colors.background.default,
         },
         cardSelected: {
           borderColor: colors.stroke.brand,
-          backgroundColor: colors.background.muted
+          backgroundColor: colors.background.muted,
         },
         topRow: {
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           gap: 8,
-          marginBottom: 8
+          marginBottom: 8,
         },
         metaRow: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
         },
-        removeText: {
-          fontSize: 11,
-          fontWeight: '600',
-          color: colors.content.tertiary
-        }
+        removeBtn: {
+          alignItems: "center",
+          justifyContent: "center",
+          width: 18,
+          height: 18,
+          borderRadius: 999,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.danger.stroke,
+          backgroundColor: colors.danger.subtle,
+        },
+        removeIcon: {
+          fontSize: 13,
+          fontWeight: "bold",
+          color: colors.danger.text,
+        },
       }),
-    [colors]
+    [colors],
   );
 
   return (
@@ -86,10 +101,14 @@ const RequestCard = ({ entry, selected, onPress, onRemove }: RequestCardProps) =
           <Pressable
             onPress={() => onRemove(entry)}
             hitSlop={8}
+            style={({ pressed }) => [
+              styles.removeBtn,
+              pressed && { opacity: 0.6 },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Remove request from list"
           >
-            <Text style={styles.removeText}>Remove</Text>
+            <Text style={styles.removeIcon}>✕</Text>
           </Pressable>
         ) : null}
       </View>
