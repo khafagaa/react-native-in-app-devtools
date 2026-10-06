@@ -1,6 +1,6 @@
 import type { StateLogEntry, StateLogSource } from './types';
 import { isStateLoggingActive, upsertStateLogEntry, clearStateLogEntries } from './state-store';
-import { redactUnknown, truncateBody } from './redaction';
+import { redactUnknown } from './redaction';
 import { ApiInspector } from './api-inspector';
 
 /**
@@ -45,11 +45,11 @@ export function recordStateChange(input: RecordStateChangeInput): void {
     timestamp: Date.now(),
     before:
       input.before !== undefined
-        ? truncateBody(redactUnknown(input.before))
+        ? redactUnknown(input.before)
         : undefined,
     after:
       input.after !== undefined
-        ? truncateBody(redactUnknown(input.after))
+        ? redactUnknown(input.after)
         : undefined,
     changedKeys: input.changedKeys
   };

@@ -1,12 +1,13 @@
 {
   "name": "react-native-in-app-devtools",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "In-app devtools for React Native. Network inspector with redaction, RTK Query adapter, and optional Redux/Zustand/Jotai state logger.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./axios": "./src/axios/index.ts",
+    "./http": "./src/http/index.ts",
     "./rtk": "./src/rtk/index.ts",
     "./redux": "./src/redux/index.ts",
     "./zustand": "./src/zustand/index.ts",
@@ -14,6 +15,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test 'src/**/__tests__/**/*.test.ts'",
     "prepare": "echo 'No build step - shipping TypeScript source'"
   },
   "keywords": [
@@ -98,6 +100,7 @@
     "react": "19.1.0",
     "react-native": "0.79.5",
     "react-native-svg": "15.15.4",
+    "tsx": "^4.19.4",
     "typescript": "~5.9.2"
   }
 }

@@ -14,9 +14,11 @@ type RequestCardProps = {
   entry: ApiLogEntry;
   selected?: boolean;
   onPress: (entry: ApiLogEntry) => void;
+  /** When set, the card shows a Remove action that drops it from the list. */
+  onRemove?: (entry: ApiLogEntry) => void;
 };
 
-const RequestCard = ({ entry, selected, onPress }: RequestCardProps) => {
+const RequestCard = ({ entry, selected, onPress, onRemove }: RequestCardProps) => {
   const { colors } = useInspectorTheme();
   const inspectorText = useInspectorStyles(colors);
   const { host, path } = useMemo(() => parseRequestUrl(entry.url), [entry.url]);
@@ -47,6 +49,11 @@ const RequestCard = ({ entry, selected, onPress }: RequestCardProps) => {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between'
+        },
+        removeText: {
+          fontSize: 11,
+          fontWeight: '600',
+          color: colors.content.tertiary
         }
       }),
     [colors]
@@ -75,6 +82,16 @@ const RequestCard = ({ entry, selected, onPress }: RequestCardProps) => {
         <Text style={inspectorText.meta}>
           {formatRequestTime(entry.startedAt)}
         </Text>
+        {onRemove ? (
+          <Pressable
+            onPress={() => onRemove(entry)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Remove request from list"
+          >
+            <Text style={styles.removeText}>Remove</Text>
+          </Pressable>
+        ) : null}
       </View>
     </Pressable>
   );

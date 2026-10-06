@@ -7,7 +7,7 @@ import {
   getApiLogEntryById,
   upsertApiLogEntry
 } from './store';
-import { redactHeaders, redactUnknown, truncateBody } from './redaction';
+import { redactHeaders, redactUnknown } from './redaction';
 
 function createId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -35,7 +35,7 @@ export function startApiLogRequest(input: StartRequestInput): string {
       url: input.url,
       queryParams: input.queryParams,
       headers: redactHeaders(input.headers),
-      body: truncateBody(redactUnknown(input.body)),
+      body: redactUnknown(input.body),
       timestamp: startedAt
     }
   };
@@ -61,7 +61,7 @@ export function completeApiLogRequest(
       status: response.status,
       statusText: response.statusText,
       headers: redactHeaders(response.headers),
-      body: truncateBody(redactUnknown(response.body))
+      body: redactUnknown(response.body)
     }
   };
   upsertApiLogEntry(updated);
@@ -106,7 +106,7 @@ export function updateApiLogRequestFailure(
       status: response.status,
       statusText: response.statusText,
       headers: redactHeaders(response.headers),
-      body: truncateBody(redactUnknown(response.body))
+      body: redactUnknown(response.body)
     },
     error
   };

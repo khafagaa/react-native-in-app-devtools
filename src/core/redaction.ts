@@ -41,29 +41,75 @@ function shouldRedactKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERN.test(key);
 }
 
-function redactValue(value: unknown): unknown {
+function redactValue(value: unknown, seen: WeakSet<object>): unknown {
   if (value == null) return value;
   if (typeof value === 'string' && value.length > 0) return REDACTED;
-  if (typeof value === 'object') return redactUnknown(value);
+  if (typeof value === 'object') return redactWalk(value, seen);
   return REDACTED;
 }
 
-export function redactUnknown(value: unknown, depth = 0): unknown {
-  if (!resolved.enabled) return value;
-  if (depth > 8) return '[Truncated]';
+/** Redact sensitive keys in `application/x-www-form-urlencoded` / query strings. */
+function redactFormOrQueryString(text: string): string {
+  return text
+    .split('&')
+    .map(part => {
+      const eq = part.indexOf('=');
+      if (eq < 0) return part;
+      let key = part.slice(0, eq);
+      try {
+        key = decodeURIComponent(key.replace(/\+/g, ' '));
+      } catch {
+        // keep raw key
+      }
+      if (!shouldRedactKey(key)) return part;
+      return `${part.slice(0, eq)}=${REDACTED}`;
+    })
+    .join('&');
+}
+
+function looksLikeFormOrQueryString(value: string): boolean {
+  if (!value.includes('=')) return false;
+  return /(?:^|&)[^=&\s]+=/.test(value);
+}
+
+/**
+ * Walks the full value (no depth cap) so nested bodies are shown in full.
+ * `seen` only guards against circular references, which would otherwise
+ * recurse forever; a repeated object is shown as `[Circular]`.
+ */
+function redactWalk(value: object, seen: WeakSet<object>): unknown {
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      return value.map(item => redactChild(item, seen));
+    }
+    const out: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = shouldRedactKey(key)
+        ? redactValue(val, seen)
+        : redactChild(val, seen);
+    }
+    return out;
+  } finally {
+    seen.delete(value);
+  }
+}
+
+function redactChild(value: unknown, seen: WeakSet<object>): unknown {
   if (value == null) return value;
-  if (Array.isArray(value)) {
-    return value.map(item => redactUnknown(item, depth + 1));
+  if (typeof value === 'string') {
+    return looksLikeFormOrQueryString(value)
+      ? redactFormOrQueryString(value)
+      : value;
   }
   if (typeof value !== 'object') return value;
+  return redactWalk(value, seen);
+}
 
-  const out: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-    out[key] = shouldRedactKey(key)
-      ? redactValue(val)
-      : redactUnknown(val, depth + 1);
-  }
-  return out;
+export function redactUnknown(value: unknown): unknown {
+  if (!resolved.enabled) return value;
+  return redactChild(value, new WeakSet<object>());
 }
 
 export function redactHeaders(
@@ -72,26 +118,4 @@ export function redactHeaders(
   if (!headers) return undefined;
   if (!resolved.enabled) return headers;
   return redactUnknown(headers) as Record<string, unknown>;
-}
-
-export function truncateBody(value: unknown, maxChars = 12000): unknown {
-  if (value == null) return value;
-
-  let text: string;
-  if (typeof value === 'string') {
-    text = value;
-  } else if (typeof value === 'function') {
-    text = '[Function]';
-  } else {
-    try {
-      text = JSON.stringify(value, null, 2) ?? String(value);
-    } catch {
-      text = String(value);
-    }
-  }
-
-  if (text.length <= maxChars) {
-    return value;
-  }
-  return `${text.slice(0, maxChars)}\n… [truncated]`;
 }

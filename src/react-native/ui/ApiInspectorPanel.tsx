@@ -12,12 +12,14 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { ApiInspector } from "../../core/api-inspector";
+import { buildApiLogExport } from "../../core/export";
 import { clearApiLogger } from "../../core/service";
 import { clearStateLogger } from "../../core/state-log";
 import {
@@ -25,7 +27,7 @@ import {
   groupStateEntriesByParent,
   parseParentLabel,
 } from "../../core/state-grouping";
-import { useApiLogEntries } from "../../core/store";
+import { removeApiLogEntry, useApiLogEntries } from "../../core/store";
 import { useStateLogEntries } from "../../core/state-store";
 import type { ApiLogEntry } from "../../core/types";
 import type { StateLogEntry } from "../../core/types";
@@ -344,6 +346,26 @@ const NetworkInspectorContent = () => {
           marginBottom: 10,
         },
         search: { marginBottom: 10 },
+        subtitleRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 10,
+        },
+        exportBtn: {
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          borderRadius: 6,
+          backgroundColor: colors.background.muted,
+        },
+        exportText: {
+          fontSize: 12,
+          fontWeight: "600",
+          color: colors.content.link,
+        },
+        exportTextDisabled: {
+          color: colors.content.tertiary,
+        },
         empty: {
           fontSize: 13,
           color: colors.content.tertiary,
@@ -360,6 +382,19 @@ const NetworkInspectorContent = () => {
     setSelectedId(entry.id);
   }, []);
 
+  const handleRemove = useCallback((entry: ApiLogEntry) => {
+    removeApiLogEntry(entry.id);
+  }, []);
+
+  const handleExport = useCallback(() => {
+    // Exports the list as currently shown, so removed or filtered-out
+    // requests are not included.
+    void Share.share({
+      title: "API requests",
+      message: buildApiLogExport(filteredEntries),
+    });
+  }, [filteredEntries]);
+
   const handleBack = useCallback(() => {
     setSelectedId(null);
   }, []);
@@ -369,13 +404,36 @@ const NetworkInspectorContent = () => {
       ? `${filteredEntries.length} of ${entries.length} requests · sensitive data hidden`
       : `${entries.length} requests · sensitive data hidden`;
 
+  const exportButton = (
+    <Pressable
+      onPress={handleExport}
+      disabled={filteredEntries.length === 0}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Download API list as JSON"
+      style={styles.exportBtn}
+    >
+      <Text
+        style={[
+          styles.exportText,
+          filteredEntries.length === 0 && styles.exportTextDisabled,
+        ]}
+      >
+        Download
+      </Text>
+    </Pressable>
+  );
+
   if (selectedEntry) {
     return <ApiRequestDetails entry={selectedEntry} onBack={handleBack} />;
   }
 
   return (
     <>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.subtitleRow}>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+        {exportButton}
+      </View>
       <InspectorSearchField
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -385,7 +443,11 @@ const NetworkInspectorContent = () => {
         data={filteredEntries}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <RequestCard entry={item} onPress={handleSelect} />
+          <RequestCard
+            entry={item}
+            onPress={handleSelect}
+            onRemove={handleRemove}
+          />
         )}
         style={styles.list}
         nestedScrollEnabled

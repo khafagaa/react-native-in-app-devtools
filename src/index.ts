@@ -7,6 +7,13 @@ export { buildCurlFromLogEntry } from './core/curl';
 export { attachApiInspectorInterceptor } from './axios/attach';
 export { default as ApiInspectorPanel } from './react-native/ui/ApiInspectorPanel';
 export type { ApiInspectorPanelProps } from './react-native/ui/ApiInspectorPanel';
+export {
+  createApiInspectorHttpLog,
+  type ApiInspectorHttpLogError,
+  type ApiInspectorHttpLogHandle,
+  type ApiInspectorHttpLogRequest,
+  type ApiInspectorHttpLogResponse
+} from './http';
 // Re-exported for Metro (package.json "exports" subpaths are often ignored).
 export {
   createReduxStateLoggerMiddleware,

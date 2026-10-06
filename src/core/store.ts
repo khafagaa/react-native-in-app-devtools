@@ -35,6 +35,13 @@ export function upsertApiLogEntry(entry: ApiLogEntry): void {
   setApiLogEntries([entry, ...without]);
 }
 
+export function removeApiLogEntry(id: string): void {
+  const next = entries.filter(entry => entry.id !== id);
+  if (next.length === entries.length) return;
+  entries = next;
+  emit();
+}
+
 export function clearApiLogEntries(): void {
   entries = [];
   emit();
